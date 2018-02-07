@@ -1,15 +1,41 @@
 #include "NetworkManager.h"
 
 NetworkManager::NetworkManager()
+	:running(true)
+{
+	
+}
+
+int NetworkManager::init()
 {
 	int returnval;
 	if (returnval = (WSAStartup(0x0202, &wsaData)) != 0)
 	{
 		printf("WSAStartup failed with error %d\n", returnval);
 		WSACleanup();
-		return;
+		return -1;
 	}
 
+	iop = CreateIoCompletionPort(
+		INVALID_HANDLE_VALUE,
+		0,
+		0,
+		threadCount / 2);
+
+	if ((iop) == 0)
+	{
+		qDebug() << "io completion port failed";
+		return -1;
+	}
+
+
+	for (int i = 0; i < threadCount; i++)
+	{
+		//todo change thread constructor
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		IoThread* t = new IoThread(this);
+		QThreadPool::globalInstance()->start(t);
+	}
 
 	if ((listenSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
 		WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
@@ -28,8 +54,8 @@ NetworkManager::NetworkManager()
 		printf("bind() failed with error %d\n", WSAGetLastError());
 		return;
 	}
-
-	if (listen(listenSocket, 2))
+	
+	if (listen(listenSocket, MAX_CONNECTIONS))
 	{
 		printf("listen() failed with error %d\n", WSAGetLastError());
 		return;
@@ -42,13 +68,18 @@ NetworkManager::NetworkManager()
 	}
 
 
-	if ((ThreadHandle = CreateThread(NULL, 0, ioThread, (LPVOID)AcceptEvent, 0, &ThreadId)) == NULL)
-	{
-		printf("CreateThread failed with error %d\n", GetLastError());
-		return;
-	}
+
 }
+
+DWORD WINAPI NetworkManager::ioThread()
+{
+	
+}
+
+
 
 NetworkManager::~NetworkManager()
 {
 }
+
+
