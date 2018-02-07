@@ -45,6 +45,9 @@
     <ClCompile Include="GeneratedFiles\qrc_NetworkAnalysisProject.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="NetworkManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="NetworkAnalysisProject.h">
@@ -55,6 +58,9 @@
     </CustomBuild>
     <CustomBuild Include="NetworkAnalysisProject.qrc">
       <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="NetworkManager.h">
+      <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
