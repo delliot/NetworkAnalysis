@@ -1,6 +1,9 @@
 #pragma once
 #pragma comment(lib,"ws2_32.lib")
 
+#include <NetworkAnalysisProject.h>
+#include "global.h"
+
 #include <QObject>
 #include <QDebug>
 #include <QDataStream>
@@ -24,40 +27,63 @@
 #define USE_UDP	   -1
 
 #define BUF_SIZE 8192
-#define PORT 9898
-#define MAX_CONNECTIONS
+#define MAX_CONNECTIONS 10
 
-
-typedef struct CONNECTION {
-	OVERLAPPED overlapped;
-	SOCKET socket;
-	CHAR buffer[BUF_SIZE];
-	WSABUF wsaBuf;
-	DWORD sendBytes;
-	DWORD rcvBytes;
-} CONNECTION, *LP_CONNECTION;
 
 
 class NetworkManager
 {
 
 public:
-	NetworkManager();
-	int init();
+	NetworkManager(int port, std::string ipAddr, unsigned packetSize, OutputHandler * outputHandler);
+	int startServer();
+	int startClient();
+	int sendAll(SOCKET socket);
+	void setProtocol(CONNECT_MODE m);
 	~NetworkManager();
 
-private:
-	void sendUdp(QByteArray data, int size);
-	void sendTcp(QByteArray data, int size);
-	
-	void CALLBACK ioRoutine(DWORD Error, DWORD BytesTransferred,
-		LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+	class IoThread : public QRunnable
+	{
+	public:
+		NetworkManager * self;
+		IoThread(NetworkManager * self);
 
-	DWORD WINAPI ioThread();
+		void run();
+
+	private:
+		HANDLE WINAPI iocp;
+	};
+
+
+	enum OP_TYPE {OP_READ, OP_WRITE};
+
+	class ioOperation : public OVERLAPPED
+	{
+	public:
+		WSABUF wsabuf;
+		SOCKET socket;
+		NetworkManager * _parent;
+		OP_TYPE optype;
+		long num_bytes_to_send;
+		long remaining_bytes;
+		char * buffer;
+
+		ioOperation(NetworkManager * const parent, long bufsize);
+		~ioOperation();
+	};
+
+private:
+	int port;
+	std::string ipAddr;
+	int recv_data(SOCKET client);
+	int read_to_file(char* data, int length);
+	unsigned packetSize;
+
+	OutputHandler * outputHandler;
 
 	WSAEVENT EventArray[WSA_MAXIMUM_WAIT_EVENTS];
 	WSAOVERLAPPED overlapped;
-	SOCKET acceptSocket;
+	SOCKET clientSocket;
 	SOCKET listenSocket;
 	WSABUF buf;
 	WSADATA wsaData;
@@ -65,33 +91,10 @@ private:
 	HANDLE ThreadHandle;
 	DWORD threadId;
 	HANDLE WINAPI iop;
+	struct hostent * host;
 
 	int threadCount;
 	bool running;
-
-	
+	CONNECT_MODE mode;
 	SOCKADDR_IN addr;
-
-	class IoThread : public QRunnable
-	{
-	public:
-		NetworkManager * self;
-
-		IoThread(NetworkManager* instance)
-			:self(instance)
-		{
-
-		}
-
-		void run()
-		{
-			//handle completion port 
-			while (self->running)
-			{
-				//GetQueuedCompletionStatus
-			}
-		}
-	};
-
-
 };
