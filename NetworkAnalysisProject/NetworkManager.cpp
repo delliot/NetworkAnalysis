@@ -194,12 +194,17 @@ int NetworkManager::startClient()
 		return 1;
 	}
 
+	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	addr.sin_addr.s_addr = inet_addr(ipAddr.c_str());
+
 	SOCKET ConnectSocket = INVALID_SOCKET;
 
 	ptr = result;
 
 	// Create a SOCKET for connecting to server
-	ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
+	ConnectSocket = socket(AF_INET, ptr->ai_socktype,
 		ptr->ai_protocol);
 
 
@@ -210,14 +215,14 @@ int NetworkManager::startClient()
 		return 1;
 	}
 
-	iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+	iResult = connect(ConnectSocket, (sockaddr *)&addr, sizeof(sockaddr_in));
 	if (iResult == SOCKET_ERROR) {
 		int r = WSAGetLastError();
 		closesocket(ConnectSocket);
 		ConnectSocket = INVALID_SOCKET;
 	}
 
-
+	sendAll(ConnectSocket);
 
 	return 0;
 }
@@ -271,9 +276,11 @@ int NetworkManager::recv_data(SOCKET client)
 	return 0;
 }
 
-int NetworkManager::read_to_file(char * data, int length)
+int NetworkManager::read_to_file(ioOperation * data, int length)
 {
-	outputHandler->writeToFile(data, length);
+	outputHandler->writeToFile(data->buffer, length);
+
+	delete data;
 
 	return 0;
 }
@@ -320,11 +327,14 @@ void NetworkManager::IoThread::run()
 					case OP_READ:
 						//read from buffer
 
-						self->read_to_file(o->buffer, bytes_transferred);
+						self->read_to_file(o, bytes_transferred);
 						self->recv_data((SOCKET) key);
 						break;
 					case OP_WRITE:
-						o->remaining_bytes -= bytes_transferred;
+						if (bytes_transferred == 0)
+						{
+							delete o;
+						}
 
 						if (o->remaining_bytes == 0)
 						{

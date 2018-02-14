@@ -12,7 +12,7 @@ NetworkAnalysisProject::NetworkAnalysisProject(QWidget *parent)
 	OutputHandler * handler = new OutputHandler(this);
 	handler->clientPacketInit(10, 1024);
 
-	NetworkManager* net = new NetworkManager(5555, "127.0.0.1", 1024, handler);
+	NetworkManager* net = new NetworkManager(30000, "192.168.0.63", 1024, handler);
 
 	net->setProtocol(TCP);
 	net->startClient();

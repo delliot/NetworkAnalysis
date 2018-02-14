@@ -3,6 +3,7 @@
 
 OutputHandler::OutputHandler(QObject *parent)
 	: QObject(parent)
+	, packetsSent(0)
 {
 
 
@@ -14,6 +15,7 @@ OutputHandler::~OutputHandler()
 
 void OutputHandler::clientFileInit(std::string fileName, unsigned packetSize)
 {
+	mode = FILE_IN;
 	inputFile.open(fileName, std::fstream::in | std::fstream::binary);
 	inputFile.seekg(0, inputFile.end);
 	fileSize = inputFile.tellg();
@@ -23,6 +25,7 @@ void OutputHandler::clientFileInit(std::string fileName, unsigned packetSize)
 
 void OutputHandler::clientPacketInit(unsigned numPackets, unsigned packetSize)
 {
+	mode = PACKET_IN;
 	this->numPackets = numPackets;
 	this->packetSize = packetSize;
 }
@@ -57,7 +60,8 @@ int OutputHandler::getNextOutput(char * buffer, int* length)
 		if (packetsSent < numPackets)
 		{
 			memset(buffer, 0x05, packetSize);
-			*length = packetSize;
+			//*length = packetSize;
+			packetsSent++;
 			return 1;
 		}
 		else

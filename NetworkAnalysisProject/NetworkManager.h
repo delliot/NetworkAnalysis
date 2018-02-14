@@ -76,7 +76,7 @@ private:
 	int port;
 	std::string ipAddr;
 	int recv_data(SOCKET client);
-	int read_to_file(char* data, int length);
+	int read_to_file(ioOperation* data, int length);
 	unsigned packetSize;
 
 	OutputHandler * outputHandler;
